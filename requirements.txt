@@ -1,0 +1,7 @@
+Flask
+curl_cffi
+gunicorn
+certifi
+cffi
+pycparser
+requests
