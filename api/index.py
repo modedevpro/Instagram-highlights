@@ -9,9 +9,7 @@ headers = {
 
 @app.route("/")
 def home():
-    return {
-        "message": "Use /highlights?user=username"
-    }
+    return {"message": "Use /highlights?user=username"}
 
 @app.route("/highlights")
 def get_highlights():
@@ -20,11 +18,8 @@ def get_highlights():
     if not username:
         return jsonify({"error": "ضيف ?user=username"}), 400
 
-    params = {
-        'username': username,
-    }
+    params = {'username': username}
 
-    # 1️⃣ user info
     response = requests.get(
         'https://i.instagram.com/api/v1/users/web_profile_info/',
         params=params,
@@ -50,7 +45,6 @@ def get_highlights():
         "highlights": []
     }
 
-    # 2️⃣ highlights
     highlights_res = requests.get(
         f'https://i.instagram.com/api/v1/highlights/{user_id}/highlights_tray/',
         headers=headers,
@@ -61,15 +55,13 @@ def get_highlights():
 
     for h in highlights_data.get("tray", []):
         highlight_id = h["id"]
-        title = h.get("title", "No Title")
 
         highlight_obj = {
             "id": highlight_id,
-            "title": title,
+            "title": h.get("title", ""),
             "stories": []
         }
 
-        # 3️⃣ items
         items_res = requests.get(
             f'https://i.instagram.com/api/v1/feed/reels_media/?reel_ids=highlight:{highlight_id}',
             headers=headers,
@@ -77,26 +69,23 @@ def get_highlights():
         )
 
         items_data = items_res.json()
-
         items = items_data.get("reels", {}).get(f"highlight:{highlight_id}", {}).get("items", [])
 
         for item in items:
-            story = {}
-
             if "video_versions" in item:
-                story["type"] = "video"
-                story["url"] = item["video_versions"][0]["url"]
-
+                highlight_obj["stories"].append({
+                    "type": "video",
+                    "url": item["video_versions"][0]["url"]
+                })
             elif "image_versions2" in item:
-                story["type"] = "image"
-                story["url"] = item["image_versions2"]["candidates"][0]["url"]
-
-            highlight_obj["stories"].append(story)
+                highlight_obj["stories"].append({
+                    "type": "image",
+                    "url": item["image_versions2"]["candidates"][0]["url"]
+                })
 
         result["highlights"].append(highlight_obj)
 
     return jsonify(result)
 
-
-if __name__ == "__main__":
-    app.run()
+# مهم جداً
+app = app
